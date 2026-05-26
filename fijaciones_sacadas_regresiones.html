@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fijaciones, Sacadas y Regresiones</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #f5f0e8;
+    --card: #fffdf7;
+    --text: #1a1a1a;
+    --fixation: #2563eb;
+    --fixation-light: rgba(37,99,235,0.12);
+    --saccade: #16a34a;
+    --regression: #dc2626;
+    --regression-light: rgba(220,38,38,0.08);
+    --border: #e2d9c8;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 8px;
+    color: #1a1a1a;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 40px;
+    font-weight: 300;
+  }
+
+  .toggle-bar {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+  }
+
+  .toggle-btn {
+    padding: 10px 22px;
+    border-radius: 999px;
+    border: 2px solid var(--border);
+    background: var(--card);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .toggle-btn.active-fix { border-color: var(--fixation); background: var(--fixation-light); color: var(--fixation); }
+  .toggle-btn.active-sac { border-color: var(--saccade); background: rgba(22,163,74,0.1); color: var(--saccade); }
+  .toggle-btn.active-reg { border-color: var(--regression); background: var(--regression-light); color: var(--regression); }
+  .toggle-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    display: grid;
+    gap: 32px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 20px;
+  }
+
+  /* TEXT DISPLAY */
+  .text-display {
+    font-size: 1.25rem;
+    line-height: 2.2;
+    font-weight: 400;
+    position: relative;
+  }
+
+  /* FIXATION: círculo azul bajo la palabra */
+  .fix {
+    position: relative;
+    display: inline;
+  }
+  .fix.show::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% + 8px);
+    height: calc(100% + 4px);
+    border: 2.5px solid var(--fixation);
+    border-radius: 6px;
+    background: var(--fixation-light);
+    pointer-events: none;
+    top: -2px;
+  }
+
+  /* FIXATION SIZE: larger circles for longer fixations */
+  .fix-lg.show::after {
+    border-width: 3px;
+    background: rgba(37,99,235,0.18);
+  }
+
+  /* REGRESSION: fondo rojo */
+  .reg {
+    position: relative;
+    display: inline;
+  }
+  .reg.show {
+    background: var(--regression-light);
+    border-bottom: 2.5px solid var(--regression);
+    border-radius: 3px;
+  }
+
+  /* SACCADE ARROWS */
+  .saccade-layer {
+    display: none;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .saccade-layer.show { display: block; }
+
+  .sac-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    line-height: 2.4;
+    font-size: 1.05rem;
+  }
+
+  .sac-word {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(22,163,74,0.08);
+    border: 1px solid rgba(22,163,74,0.2);
+    font-weight: 500;
+    color: #14532d;
+    white-space: nowrap;
+  }
+
+  .sac-arrow {
+    color: var(--saccade);
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .sac-arrow-back {
+    color: var(--regression);
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #555;
+  }
+
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .legend-fix { background: var(--fixation-light); border: 2px solid var(--fixation); }
+  .legend-sac { background: rgba(22,163,74,0.1); border: 2px solid var(--saccade); }
+  .legend-reg { background: var(--regression-light); border: 2px solid var(--regression); }
+
+  /* EXPLANATION CARDS */
+  .exp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .exp-card {
+    border-radius: 14px;
+    padding: 20px;
+    border: 1.5px solid var(--border);
+  }
+
+  .exp-card.fix-card { border-color: var(--fixation); background: var(--fixation-light); }
+  .exp-card.sac-card { border-color: var(--saccade); background: rgba(22,163,74,0.07); }
+  .exp-card.reg-card { border-color: var(--regression); background: var(--regression-light); }
+
+  .exp-card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+  .exp-card.fix-card h3 { color: var(--fixation); }
+  .exp-card.sac-card h3 { color: var(--saccade); }
+  .exp-card.reg-card h3 { color: var(--regression); }
+
+  .exp-card p {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #444;
+    font-weight: 300;
+  }
+
+  .note {
+    font-size: 0.8rem;
+    color: #888;
+    text-align: center;
+    margin-top: 8px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<h1>Fijaciones, Sacadas y Regresiones</h1>
+<p class="subtitle">Visualización didáctica del movimiento ocular durante la lectura</p>
+
+<div class="toggle-bar">
+  <button class="toggle-btn" id="btn-fix" onclick="toggle('fix')">● Mostrar Fijaciones</button>
+  <button class="toggle-btn" id="btn-sac" onclick="toggle('sac')">→ Mostrar Sacadas</button>
+  <button class="toggle-btn" id="btn-reg" onclick="toggle('reg')">← Mostrar Regresiones</button>
+</div>
+
+<div class="container">
+
+  <!-- TEXTO PRINCIPAL -->
+  <div class="card">
+    <div class="card-label">Texto de lectura</div>
+
+    <div class="text-display" id="main-text">
+      Yo te diría que no vale la pena
+      <span class="fix fix-lg" id="fix-desgastarte">desgastarte</span>
+      tanto por la
+      <span class="fix fix-lg" id="fix-empresa">empresa</span>,
+      porque al final, por más
+      <span class="fix" id="fix-esfuerzo">esfuerzo</span>
+      <span class="fix" id="fix-extra">extra</span>
+      que hagas,
+      <span class="reg" id="reg-1">muchas veces la empresa solo lo ve como si estuvieras cumpliendo con lo mínimo</span>.
+      Está bien ser
+      <span class="fix" id="fix-responsable">responsable</span>
+      y dar lo mejor de ti, pero también debes cuidar tu
+      <span class="fix fix-lg" id="fix-salud">salud mental</span>,
+      tu
+      <span class="fix" id="fix-tiempo">tiempo</span>
+      y tu
+      <span class="fix fix-lg" id="fix-tranquilidad">tranquilidad</span>.
+    </div>
+
+    <!-- SACADAS -->
+    <div class="saccade-layer" id="sac-layer">
+      <div class="card-label" style="margin-bottom:12px;">Patrón de sacadas (izquierda → derecha) y regresiones (← vuelta atrás)</div>
+      <div class="sac-row">
+        <span class="sac-word">Yo te diría</span>
+        <span class="sac-arrow">→</span>
+        <span class="sac-word">no vale la pena</span>
+        <span class="sac-arrow">→</span>
+        <span class="sac-word">desgastarte</span>
+        <span class="sac-arrow">→</span>
+        <span class="sac-word">tanto por la empresa</span>
+        <span class="sac-arrow">→</span>
+        <span class="sac-word">por más esfuerzo extra</span>
+        <span class="sac-arrow">→</span>
+        <span class="sac-word">que hagas</span>
+        <span class="sac-arrow">→</span>
+        <span class="sac-word">muchas veces... lo mínimo</span>
+        <span class="sac-arrow-back">←</span>
+        <span class="sac-word" style="border-color:rgba(220,38,38,0.3);background:rgba(220,38,38,0.07);color:#991b1b;">REGRESIÓN</span>
+        <span class="sac-arrow-back">←</span>
+        <span class="sac-word">solo lo ve...</span>
+        <span class="sac-arrow">→</span>
+        <span class="sac-word">ser responsable</span>
+        <span class="sac-arrow">→</span>
+        <span class="sac-word">salud mental</span>
+        <span class="sac-arrow">→</span>
+        <span class="sac-word">tiempo</span>
+        <span class="sac-arrow">→</span>
+        <span class="sac-word">tranquilidad</span>
+      </div>
+    </div>
+
+    <!-- LEYENDA -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot legend-fix"></div> Fijación: el ojo se detiene</div>
+      <div class="legend-item"><div class="legend-dot legend-sac"></div> Sacada: salto rápido entre grupos</div>
+      <div class="legend-item"><div class="legend-dot legend-reg"></div> Regresión: vuelta atrás para releer</div>
+    </div>
+    <p class="note">* Las fijaciones más grandes indican mayor tiempo de procesamiento</p>
+  </div>
+
+  <!-- EXPLICACIONES -->
+  <div class="card">
+    <div class="card-label">¿Qué significa cada movimiento?</div>
+    <div class="exp-grid">
+      <div class="exp-card fix-card">
+        <h3>● Fijación</h3>
+        <p>El ojo se detiene entre 200 y 600 ms sobre una palabra. Ocurre en palabras de contenido fuerte: sustantivos, verbos principales, términos complejos. Durante la fijación ocurre el procesamiento cognitivo real.</p>
+      </div>
+      <div class="exp-card sac-card">
+        <h3>→ Sacada</h3>
+        <p>Movimiento rápido entre fijaciones (20–200 ms). El ojo no procesa información durante el salto. El cerebro agrupa 2 a 3 palabras por fijación, saltando sobre palabras funcionales como artículos y preposiciones.</p>
+      </div>
+      <div class="exp-card reg-card">
+        <h3>← Regresión</h3>
+        <p>Sacada hacia atrás en el texto. Ocurre cuando el lector no comprende algo, encuentra ambigüedad o una oración es densa semánticamente. Indica mayor carga cognitiva en ese fragmento.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const state = { fix: false, sac: false, reg: false };
+
+  function toggle(type) {
+    state[type] = !state[type];
+
+    if (type === 'fix') {
+      document.querySelectorAll('.fix').forEach(el => {
+        el.classList.toggle('show', state.fix);
+      });
+      const btn = document.getElementById('btn-fix');
+      btn.classList.toggle('active-fix', state.fix);
+      btn.textContent = state.fix ? '● Ocultar Fijaciones' : '● Mostrar Fijaciones';
+    }
+
+    if (type === 'sac') {
+      const layer = document.getElementById('sac-layer');
+      layer.classList.toggle('show', state.sac);
+      const btn = document.getElementById('btn-sac');
+      btn.classList.toggle('active-sac', state.sac);
+      btn.textContent = state.sac ? '→ Ocultar Sacadas' : '→ Mostrar Sacadas';
+    }
+
+    if (type === 'reg') {
+      document.querySelectorAll('.reg').forEach(el => {
+        el.classList.toggle('show', state.reg);
+      });
+      const btn = document.getElementById('btn-reg');
+      btn.classList.toggle('active-reg', state.reg);
+      btn.textContent = state.reg ? '← Ocultar Regresiones' : '← Mostrar Regresiones';
+    }
+  }
+</script>
+
+</body>
+</html>
